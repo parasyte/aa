@@ -4,6 +4,16 @@ descripttion = "Alcoholic Astronomers"
 version = "0.1.0"
 authors = ["Jay Oster <jay@kodewerx.org>"]
 edition = "2018"
+repository = "https://github.com/parasyte/aa"
+readme = "README.md"
+license = "MIT"
+include = [
+    "/Cargo.*",
+    "/LICENSE",
+    "/README.md",
+    "/img/logo.jpg",
+    "/src/**/*",
+]
 
 [features]
 default = []

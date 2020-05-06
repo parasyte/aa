@@ -1,5 +1,7 @@
 # Alcoholic Astronomers
 
+![Astronaut with a beer on the moon](./img/logo.jpg)
+
 Bringing you star gazing tranquility one drink at a time.
 
 
