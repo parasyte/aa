@@ -12,6 +12,9 @@ mod vcs;
 struct Args {
     help: bool,
 
+    #[options(help = "Do not print protected section information")]
+    quiet: bool,
+
     #[options(help = "Path to write unprotected Verilog file")]
     output: Option<String>,
 
@@ -38,12 +41,12 @@ fn print_pli_info(buffer: &[u8]) {
         "UNKNOWN"
     };
     let protected = if buffer[4] & 1 == 1 { "yes" } else { "no" };
-    eprintln!("magic:        {}", magic);
-    eprintln!("version:      {}", version);
-    eprintln!("G:            {}", make_print(&buffer[3]));
-    eprintln!("protected:    {}", protected);
-    eprintln!("last_block:   {:?}", &buffer[0x8..0x10]);
-    eprintln!("licence_code: {:?}", &buffer[0x1f..0x1f + 4]);
+    println!("magic:        {}", magic);
+    println!("version:      {}", version);
+    println!("G:            {}", make_print(&buffer[3]));
+    println!("protected:    {}", protected);
+    println!("last_block:   {:?}", &buffer[0x8..0x10]);
+    println!("licence_code: {:?}", &buffer[0x1f..0x1f + 4]);
 }
 
 fn decrypt_line(
@@ -66,7 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse_args_default_or_exit();
 
     let input = BufReader::new(File::open(args.input)?);
-    let mut output: BufWriter<Box<dyn Write>> = if let Some(output) = args.output {
+    let mut output: BufWriter<Box<dyn Write>> = if let Some(output) = args.output.as_ref() {
         BufWriter::new(Box::new(File::create(output)?))
     } else {
         BufWriter::new(Box::new(io::stdout()))
@@ -94,7 +97,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     vcs.sp_mercury(&buffer[..]);
     vcs.last_block.copy_from_slice(&vcs.buffer[0x8..0x10]);
 
-    print_pli_info(&vcs.buffer);
+    if args.output.is_some() && !args.quiet {
+        print_pli_info(&vcs.buffer);
+    }
 
     // Write the very interesting protected stuff
     for line in &mut lines {
