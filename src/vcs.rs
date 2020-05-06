@@ -1,5 +1,7 @@
 use byteorder::{ByteOrder, LittleEndian};
 
+/// Oh hey, these are the NEWDES S-boxes! ;)
+/// https://groups.google.com/forum/#!msg/sci.crypt/DFmZzBcgF2M/xZ36MbKGuX8J
 #[rustfmt::skip]
 const MARTINI: [u8; 256] = [
     0x20, 0x89, 0xef, 0xbc, 0x66, 0x7d, 0xdd, 0x48, 0xd4, 0x44, 0x51, 0x25, 0x56, 0xed, 0x93, 0x95,
@@ -108,6 +110,7 @@ impl VCS {
         self.last_block[..].copy_from_slice(&self.buffer[0x08..0x10]);
 
         // Copy randomized buffer to state
+        // AKA key expansion
         for j in 0..4 {
             let j = j * 15;
             self.state[j..j + 15].copy_from_slice(&self.buffer[0x10..0x1f]);
@@ -210,6 +213,7 @@ impl VCS {
     }
 
     /// Mixes a large 60-bit cipher state with a 64-bit block output using the `MARTINI` S-box.
+    /// This is the NEWDES `encrypt` function.
     fn dewars_rocks(state: &[u8; 7 * 8 + 4], buffer: &mut [u8]) {
         for i in 0..8 {
             let i = i * 7;
