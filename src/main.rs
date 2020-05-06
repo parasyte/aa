@@ -38,12 +38,11 @@ fn print_pli_info(buffer: &[u8]) {
         "UNKNOWN"
     };
     let protected = if buffer[4] & 1 == 1 { "yes" } else { "no" };
-    let last_block: String = buffer.iter().skip(0x8).take(0x8).map(make_print).collect();
     eprintln!("magic:        {}", magic);
     eprintln!("version:      {}", version);
     eprintln!("G:            {}", make_print(&buffer[3]));
     eprintln!("protected:    {}", protected);
-    eprintln!("last_block:   {}", last_block);
+    eprintln!("last_block:   {:?}", &buffer[0x8..0x10]);
     eprintln!("licence_code: {:?}", &buffer[0x1f..0x1f + 4]);
 }
 
@@ -54,9 +53,7 @@ fn decrypt_line(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let (decoded, length, _more) = VCS::vodka_twist(&buffer[..], buffer.len());
 
-    // FIXME
-    vcs.length = 0x30;
-
+    vcs.length = (length & 0xff) as u8;
     vcs.buffer[..decoded.len()].copy_from_slice(&decoded);
     vcs.decipher();
 

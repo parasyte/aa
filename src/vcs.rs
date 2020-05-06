@@ -171,10 +171,11 @@ impl VCS {
         Self::_slo_gin_fizz(&self.buffer, self.length as usize)
     }
 
+    /// Encrypt a block operating in CBC mode.
     /// This is common code extracted from `_vcs_sp_sncode_off` and `_vcs_sp_write_string`.
     /// Likely inlined.
     fn _encipher(&mut self) {
-        for p in 0..self.length as usize / 8 {
+        for p in 0..Self::pad_length(self.length as usize, 8) / 8 {
             let p = p * 8;
 
             for (i, b) in self.last_block.iter().enumerate() {
@@ -188,11 +189,12 @@ impl VCS {
         }
     }
 
+    /// Decrypt a block operating in CBC mode.
     /// Reciprocal function to encipher.
     pub(crate) fn decipher(&mut self) {
         let mut last_block = [0; 8];
 
-        for p in 0..self.length as usize / 8 {
+        for p in 0..Self::pad_length(self.length as usize, 8) / 8 {
             let p = p * 8;
 
             // Update last_block
@@ -227,6 +229,12 @@ impl VCS {
         buffer[7] ^= MARTINI[(buffer[3] ^ state[7 * 8 + 3]) as usize];
     }
 
+    /// Pad the provided length to the next multiple of `n`.
+    fn pad_length(length: usize, n: u8) -> usize {
+        let n = n as f64;
+        ((length as f64 / n).ceil() * n) as usize
+    }
+
     /// Encode cipher text block.
     /// sic: Sloe gin
     fn _slo_gin_fizz(buffer: &[u8], in_length: usize) -> Vec<u8> {
@@ -234,13 +242,14 @@ impl VCS {
         input.extend_from_slice(&buffer);
 
         // Length padding
-        let mut padded_length = in_length;
-        let length_adjusted = if padded_length != 0x30 {
-            padded_length = (padded_length + 7) & !7;
-            padded_length = ((padded_length as f64 / 3.0).ceil() * 3.0) as usize;
-            true
-        } else {
-            false
+        let (padded_length, length_adjusted) = {
+            if in_length != 0x30 {
+                let padded_length = Self::pad_length(in_length, 8);
+
+                (Self::pad_length(padded_length, 3), true)
+            } else {
+                (in_length, false)
+            }
         };
 
         for _ in 0..padded_length - in_length {
@@ -326,8 +335,7 @@ impl VCS {
         }
 
         let mut output = Vec::new();
-        let padded_length = ((out_length as f64 / 3.0).ceil() * 3.0) as usize;
-        for i in 0..padded_length / 3 {
+        for i in 0..in_length / 4 {
             let i = i * 4;
             let temp = input[i] - 0x28;
             output.push(((temp & 0x30) << 2) + (input[i + 1] - 0x28));
